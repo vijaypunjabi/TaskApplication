@@ -7,6 +7,8 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using PagedList;
+using PagedList.Mvc;
 using TaskApplication.InfraForAuthentication;
 using TaskApplication.Models;
 
@@ -19,7 +21,7 @@ namespace TaskApplication.Controllers
 
         // GET: Products
         [CustomAuthorizationFilter("Admin", "Normal")]
-        public async Task<ActionResult> Index()
+        public async Task<ActionResult> Index(int page = 1 , int pageSize = 10)
         {
             var userName = Convert.ToString(HttpContext.Session["UserName"]);
             var IsAdmin = (from u in db.Users join r in db.Roles on u.RoleId equals r.Id where u.UserName == userName select r.Name).FirstOrDefault();
@@ -27,8 +29,11 @@ namespace TaskApplication.Controllers
             {
                 ViewBag.Show = true;
             }
-            var products = db.Products.Include(p => p.Category);
-            return View(await products.ToListAsync());
+            //var products = db.Products.Include(p => p.Category);
+            //return View(await products.ToListAsync());
+            var listProducts = await db.Products.ToListAsync();
+            PagedList<Product> product = new PagedList<Product>(listProducts, page, pageSize);
+            return View(product);
         }
 
         // GET: Products/Details/5
@@ -51,7 +56,7 @@ namespace TaskApplication.Controllers
         [CustomAuthorizationFilter("Admin")]
         public ActionResult Create()
         {
-            ViewBag.CategoryId = new SelectList(db.Categories, "Id", "Name");
+            ViewBag.CategoryId = new SelectList(db.Categories, "Id", "Name" ,"CreatedBy");
             return View();
         }
 
@@ -61,7 +66,7 @@ namespace TaskApplication.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [CustomAuthorizationFilter("Admin")]
-        public async Task <ActionResult> Create(/*[Bind(Include = "Id,Name,CreatedBy,CategoryId")]*/ Product product)
+        public async Task <ActionResult> Create([Bind(Include = "Id,Name,CreatedBy,CategoryId")] Product product)
         {
             if (ModelState.IsValid)
             {
@@ -69,13 +74,17 @@ namespace TaskApplication.Controllers
                 addProduct.Name = product.Name;
                 addProduct.CategoryId = product.CategoryId;
                 addProduct.IsActive = product.IsActive;
+                addProduct.CreatedBy = (int) Session["UserId"];
+                addProduct.CreatedDate = DateTime.Now;
+             
+                
 
-                db.Products.Add(product);
+                db.Products.Add(addProduct);
                 await db.SaveChangesAsync();
                 return RedirectToAction("Index");
             }
 
-            ViewBag.CategoryId = new SelectList(db.Categories, "Id", "Name", product.CategoryId);
+            ViewBag.CategoryId = new SelectList(db.Categories, "Id", "Name" , "CreatedBy", product.CategoryId);
             return View(product);
         }
 
@@ -104,14 +113,31 @@ namespace TaskApplication.Controllers
         [CustomAuthorizationFilter("Admin")]
         public ActionResult Edit([Bind(Include = "Id,Name,CreatedBy,CategoryId")] Product product)
         {
-            if (ModelState.IsValid)
+            if(ModelState.IsValid)
             {
-                db.Entry(product).State = EntityState.Modified;
+
+                var userId = Session["UserId"];
+                var addProduct = db.Products.Where(u => u.Id == product.Id).SingleOrDefault();
+                addProduct.Name = product.Name;
+                addProduct.CategoryId = product.CategoryId;
+                addProduct.IsActive = product.IsActive;
+                addProduct.CreatedBy = (int)userId;
+                addProduct.CreatedDate = DateTime.Now;
+
+                db.Entry(addProduct).State = EntityState.Modified;
                 db.SaveChanges();
                 return RedirectToAction("Index");
             }
-            ViewBag.CategoryId = new SelectList(db.Categories, "Id", "Name", product.CategoryId);
-            return View(product);
+            return View();
+
+            //if (ModelState.IsValid)
+            //{
+            //    db.Entry(product).State = EntityState.Modified;
+            //    db.SaveChanges();
+            //    return RedirectToAction("Index");
+            //}
+            //ViewBag.CategoryId = new SelectList(db.Categories, "Id", "Name", product.CategoryId);
+            //return View(product);
         }
 
         // GET: Products/Delete/5

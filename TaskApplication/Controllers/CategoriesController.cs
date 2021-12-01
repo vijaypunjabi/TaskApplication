@@ -9,6 +9,8 @@ using System.Web;
 using System.Web.Mvc;
 using TaskApplication.InfraForAuthentication;
 using TaskApplication.Models;
+using PagedList;
+using PagedList.Mvc;
 
 namespace TaskApplication.Controllers
 {
@@ -18,9 +20,12 @@ namespace TaskApplication.Controllers
         private TaskContext db = new TaskContext();
 
         // GET: Categories
-        public async Task<ActionResult> Index()
+        public async Task<ActionResult> Index(int page = 1 , int pageSize = 10)
         {
-            return View(await db.Categories.ToListAsync());
+            //For Pagination
+            var listCategories = await db.Categories.ToListAsync();
+            PagedList<Category> categories = new PagedList<Category>(listCategories, page, pageSize);
+            return View(categories);
         }
 
         // GET: Categories/Details/5
@@ -55,9 +60,19 @@ namespace TaskApplication.Controllers
         {
             if (ModelState.IsValid) 
             {
-                db.Categories.Add(category);
+                //db.Categories.Add(category);
+                //await db.SaveChangesAsync();
+                //return RedirectToAction("Index");
+                Category _category = new Category();
+                _category.Name = category.Name;
+                _category.IsActive = category.IsActive;
+                _category.CreatedBy = category.CreatedBy;
+                _category.CreatedDate = DateTime.Now;
+                db.Categories.Add(_category);
                 await db.SaveChangesAsync();
                 return RedirectToAction("Index");
+
+
             }
 
             return View(category);
@@ -89,28 +104,36 @@ namespace TaskApplication.Controllers
         {
             if (ModelState.IsValid)
             {
-                db.Entry(category).State = EntityState.Modified;
-                if(category.IsActive == false)
-                {
-                    var products = new List<Product>();
-                    products = await db.Products.Where(p => p.CategoryId == category.Id).ToListAsync();
-                    foreach(var p in products)
-                    {
-                        p.IsActive = false;
-                    }
-                }
-                else
-                {
-                    var products = new List<Product>();
-                    products = await db.Products.Where(p => p.CategoryId == category.Id).ToListAsync();
-                    foreach(var p in products)
-                    {
-                        p.IsActive = true;
-                    }
-                }
+                //db.Entry(category).State = EntityState.Modified;
+                //if(category.IsActive == false)
+                //{
+                //    var products = new List<Product>();
+                //    products = await db.Products.Where(p => p.CategoryId == category.Id).ToListAsync();
+                //    foreach(var p in products)
+                //    {
+                //        p.IsActive = false;
+                //    }
+                //}
+                //else
+                //{
+                //    var products = new List<Product>();
+                //    products = await db.Products.Where(p => p.CategoryId == category.Id).ToListAsync();
+                //    foreach(var p in products)
+                //    {
+                //        p.IsActive = true;
+                //    }
+                Category _category = db.Categories.Where(u => u.Id == category.Id).SingleOrDefault();
+                _category.Name = category.Name;
+                _category.IsActive = category.IsActive;
+                _category.CreatedBy = category.CreatedBy;
+                _category.CreatedDate = DateTime.Now;
+                db.Entry(_category).State = EntityState.Modified;
                 await db.SaveChangesAsync();
                 return RedirectToAction("Index");
             }
+                await db.SaveChangesAsync();
+             //   return RedirectToAction("Index"); }
+            
             return View(category);
         }
 

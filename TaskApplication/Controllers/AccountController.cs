@@ -26,8 +26,8 @@ namespace TaskApplication.Controllers
                    
                     if(user != null)
                     {
-                        Session["UserName"] = UserTable.UserName;
-                        Session["UserId"] = UserTable.Id;
+                        Session["UserName"] = user.UserName;
+                        Session["UserId"] = user.Id;
                         return RedirectToAction("Index", "Home");
                         //return RedirectToRoute("");
                     }
