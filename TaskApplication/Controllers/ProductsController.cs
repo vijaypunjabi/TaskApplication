@@ -66,7 +66,7 @@ namespace TaskApplication.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [CustomAuthorizationFilter("Admin")]
-        public async Task <ActionResult> Create([Bind(Include = "Id,Name,CreatedBy,CategoryId")] Product product)
+        public async Task <ActionResult> Create([Bind(Include = "Id,Name,CreatedBy,CategoryId,IsActive")] Product product)
         {
             if (ModelState.IsValid)
             {
@@ -111,7 +111,7 @@ namespace TaskApplication.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [CustomAuthorizationFilter("Admin")]
-        public ActionResult Edit([Bind(Include = "Id,Name,CreatedBy,CategoryId")] Product product)
+        public ActionResult Edit([Bind(Include = "Id,Name,CreatedBy,CategoryId,IsActive")] Product product)
         {
             if(ModelState.IsValid)
             {
